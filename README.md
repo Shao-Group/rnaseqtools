@@ -1,3 +1,20 @@
+# compile from git clone
+
+First, clone the source code by:
+```
+git clone git@github.com:Shao-Group/rnaseqtools.git .
+```
+Then, compile with the following commands
+```
+aclocal
+autoconf
+autoheader
+automake -a
+make -j 20
+```
+
+# compile from releases
+
 This repo `rnaseqtools` provides a set of tools to process transcripts (mainly in
 `gtf` format).  To compile these tools, you first need to 
 download the source code of the latest release
