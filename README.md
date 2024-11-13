@@ -11,7 +11,7 @@ autoconf
 autoheader
 automake -a
 ./configure
-make -j 20
+make
 ```
 
 # compile from releases
