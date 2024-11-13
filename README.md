@@ -10,6 +10,7 @@ aclocal
 autoconf
 autoheader
 automake -a
+./configure
 make -j 20
 ```
 
