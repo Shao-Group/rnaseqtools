@@ -1,6 +1,6 @@
 # compile from git clone
 
-First, clone the source code by:
+First, clone the source code by doing the following (in an empty folder):
 ```
 git clone git@github.com:Shao-Group/rnaseqtools.git .
 ```
