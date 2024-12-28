@@ -43,7 +43,10 @@ public:
 	int compare_junction(const genome1 &gm);
 	int compare_chain(genome1 &gm, const string &file);
 
+	int compare_small_difference(const genome1 &gm);
+
 public:
+	int build_all_transcripts(const string &file);
 	int build_chain_hashing(const string &file);
 	int build_boundary_hashing(const string &file);
 	int add_transcript1(const transcript &t);

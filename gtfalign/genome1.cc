@@ -6,6 +6,22 @@
 genome1::genome1()
 {}
 
+int genome1::build_all_transcripts(const string &file)
+{
+	clear();
+	genome gm(file);
+	for(int i = 0; i < gm.genes.size(); i++)
+	{
+		const gene &g = gm.genes[i];
+		for(int k = 0; k < g.transcripts.size(); k++)
+		{
+			const transcript &t = g.transcripts[k];
+			transcripts.push_back(t);
+		}
+	}
+	return 0;
+}
+
 int genome1::build_chain_hashing(const string &file)
 {
 	clear();
@@ -44,6 +60,22 @@ int genome1::clear()
 {
 	transcripts.clear();
 	chain_hashing.clear();
+	return 0;
+}
+
+int genome1::compare_small_difference(const genome1 &gm)
+{
+	for(int i = 0; i < transcripts.size(); i++)
+	{
+		const transcript & ti = transcripts[i];
+		for(int j = 0; j < gm.transcripts.size(); j++)
+		{
+			const transcript & tj = gm.transcripts[j];
+
+			//TODO: compare ti and tj, 
+			// identifical if all differences are small (say, < 20bp)
+		}
+	}
 	return 0;
 }
 
