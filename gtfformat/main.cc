@@ -24,6 +24,7 @@ int main(int argc, const char **argv)
 		cout<<"       " << argv[0] << " length <min-transcript-length> <max-transcript-length> <in-gtf-file> <out-gtf-file>"<<endl;
         cout<<"       " << argv[0] << " filter-tr-num <min-transcript-num> <in-gtf-file> <out-gtf-file>"<<endl;
         cout<<"       " << argv[0] << " select-tr <transcript-list> <in-gtf-file> <out-gtf-file>"<<endl;
+        cout<<"       " << argv[0] << " TSSTES <in-gtf-file>"<<endl;
 		return 0;
 	}
 
@@ -98,5 +99,12 @@ int main(int argc, const char **argv)
         genome1 gm;
         gm.write_all(argv[3], argv[4], expressedTr);
     }
+
+	if(string(argv[1]) == "TSSTES")
+	{
+		genome1 gm;
+		gm.build_tsstes(argv[2]);
+	}
+
     return 0;
 }

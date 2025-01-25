@@ -401,3 +401,43 @@ int genome1::write_all(const string &input, const string &output, set<string> ex
     return 0;
 }
 
+int genome1::build_tsstes(const string &input)
+{
+	genome gm(input);
+
+	map< pair<string, int32_t>, pair<int, int> > m1;
+	map< pair<string, int32_t>, pair<int, int> > m2;
+	for(int i = 0; i < gm.genes.size(); i++)
+	{
+		for(int j = 0; j < gm.genes[i].transcripts.size(); j++)
+		{
+			transcript &t = gm.genes[i].transcripts[j];
+			printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
+
+			pair<string, int32_t> p1 = make_pair(t.seqname, t.start + 1);
+			pair<string, int32_t> p2 = make_pair(t.seqname, t.end);
+
+			if(t.strand == '+') 
+			{
+				if(m1.find(p1) == m1.end()) m1.insert(make_pair(p1, pair<int, int>(1, 0)));
+				else m1[p1].first++;
+				if(m2.find(p2) == m2.end()) m2.insert(make_pair(p2, pair<int, int>(1, 0)));
+				else m2[p2].first++;
+			}
+
+			if(t.strand == '-') 
+			{
+				if(m1.find(p2) == m1.end()) m1.insert(make_pair(p2, pair<int, int>(0, 1)));
+				else m1[p2].second++;
+				if(m2.find(p1) == m2.end()) m2.insert(make_pair(p1, pair<int, int>(0, 1)));
+				else m2[p1].second++;
+
+			}
+		}
+	}
+
+	for(auto &x : m1) printf("TSS: %s %d %d %d\n", x.first.first.c_str(), x.first.second, x.second.first, x.second.second);
+	for(auto &x : m2) printf("TES: %s %d %d %d\n", x.first.first.c_str(), x.first.second, x.second.first, x.second.second);
+
+	return 0;
+}

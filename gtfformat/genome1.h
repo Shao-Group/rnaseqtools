@@ -34,6 +34,7 @@ public:
 	int stats_exons(const string &file, int n);
 	int stats_length(const string &file);
     int write_all(const string &input, const string &output, set<string> expressedTr);
+    int build_tsstes(const string &input);
 
 private:
 	int build_multiexon_transcripts(const string &file);
