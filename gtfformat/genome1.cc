@@ -412,7 +412,7 @@ int genome1::build_tsstes(const string &input)
 		for(int j = 0; j < gm.genes[i].transcripts.size(); j++)
 		{
 			transcript &t = gm.genes[i].transcripts[j];
-			printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
+			//printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
 
 			pair<string, int32_t> p1 = make_pair(t.seqname, t.start + 1);
 			pair<string, int32_t> p2 = make_pair(t.seqname, t.end);
@@ -436,8 +436,8 @@ int genome1::build_tsstes(const string &input)
 		}
 	}
 
-	for(auto &x : m1) printf("TSS: %s %d %d %d\n", x.first.first.c_str(), x.first.second, x.second.first, x.second.second);
-	for(auto &x : m2) printf("TES: %s %d %d %d\n", x.first.first.c_str(), x.first.second, x.second.first, x.second.second);
+	for(auto &x : m1) printf("TSS %s %d %d %d\n", x.first.first.c_str(), x.first.second, x.second.first, x.second.second);
+	for(auto &x : m2) printf("TES %s %d %d %d\n", x.first.first.c_str(), x.first.second, x.second.first, x.second.second);
 
 	return 0;
 }
