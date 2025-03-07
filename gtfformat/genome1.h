@@ -35,7 +35,7 @@ public:
 	int stats_length(const string &file);
     int write_all(const string &input, const string &output, set<string> expressedTr);
     int build_tsstes(const string &input);
-
+	int filter_transcripts_with_tsstes(const string &input, const string &predictions, const string &output);
 private:
 	int build_multiexon_transcripts(const string &file);
 	int build_all_transcripts(const string &file);

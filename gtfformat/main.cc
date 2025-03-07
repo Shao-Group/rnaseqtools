@@ -3,6 +3,7 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 #include "genome.h"
 #include "genome1.h"
@@ -25,6 +26,7 @@ int main(int argc, const char **argv)
         cout<<"       " << argv[0] << " filter-tr-num <min-transcript-num> <in-gtf-file> <out-gtf-file>"<<endl;
         cout<<"       " << argv[0] << " select-tr <transcript-list> <in-gtf-file> <out-gtf-file>"<<endl;
         cout<<"       " << argv[0] << " TSSTES <in-gtf-file>"<<endl;
+		cout<<"		  " << argv[0] << " remove-fp <in-gtf-file> <predictions-file> <out-gtf-file>"<<endl;
 		return 0;
 	}
 
@@ -106,5 +108,11 @@ int main(int argc, const char **argv)
 		gm.build_tsstes(argv[2]);
 	}
 
+	if(string(argv[1]) == "remove-fp" )
+	{
+		genome1 gm;
+		assert(argc == 5);
+		gm.filter_transcripts_with_tsstes(argv[2], argv[3], argv[4]);
+	}
     return 0;
 }
