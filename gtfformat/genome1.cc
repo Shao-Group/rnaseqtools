@@ -618,3 +618,41 @@ int genome1::filter_transcripts_with_tsstes(const string &input, const string &p
 	return 0;
 	
 }
+
+
+int genome1::filter_transcripts_by_chromosomes(const std::string &input_gtf, const std::string &chrom_file, const std::string &output_gtf)
+{
+    // Step 1: Load chromosome names from the file into a set
+    std::unordered_set<std::string> allowed_chromosomes;
+    std::ifstream chrom_ifs(chrom_file);
+    if (!chrom_ifs)
+    {
+        std::cerr << "Error: cannot open chromosome list file: " << chrom_file << std::endl;
+        return 1;
+    }
+
+    std::string chrom_line;
+    while (std::getline(chrom_ifs, chrom_line))
+    {
+        if (!chrom_line.empty())
+            allowed_chromosomes.insert(chrom_line);
+    }
+    chrom_ifs.close();
+
+    // Step 2: Load all transcripts from the input GTF
+    build_all_transcripts(input_gtf);
+
+    // Step 3: Filter transcripts whose chromosome name is in the allowed list
+    std::vector<transcript> filtered_transcripts;
+    for (const auto &t : transcripts)
+    {
+        if (allowed_chromosomes.count(t.seqname))
+            filtered_transcripts.push_back(t);
+    }
+
+    // Step 4: Write the filtered transcripts to the output GTF
+    transcripts = filtered_transcripts;
+    write(output_gtf);
+
+    return 0;
+}
