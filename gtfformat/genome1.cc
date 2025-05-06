@@ -554,7 +554,7 @@ int genome1::filter_transcripts_with_tsstes(const string &input, const string &p
 			case 2: // position
 				pos = atoi(value.c_str());
 				break;
-			case 6: // prediction 
+			case 4: // prediction 
 				pred_value = atoi(value.c_str());
 				break;
 			default:
@@ -590,6 +590,12 @@ int genome1::filter_transcripts_with_tsstes(const string &input, const string &p
 	{
 		cout << x.first << " ";
 	}
+	cout << endl;	
+	for (const auto &y : chrom_data_tes)
+	{
+		cout << y.first << " ";
+	}
+	cout << endl;
 
 	vector<transcript> filtered_tr;
 	for( int i=0; i<(int)transcripts.size(); i++)

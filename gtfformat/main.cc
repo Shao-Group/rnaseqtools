@@ -114,5 +114,13 @@ int main(int argc, const char **argv)
 		assert(argc == 5);
 		gm.filter_transcripts_with_tsstes(argv[2], argv[3], argv[4]);
 	}
+
+	if(string(argv[1]) == "filter-chrom")
+	{
+		assert(argc == 5);
+		genome1 gm;
+		gm.filter_transcripts_by_chromosomes(argv[2], argv[3], argv[4]);
+	}
+
     return 0;
 }
