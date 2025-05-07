@@ -35,9 +35,11 @@ public:
 	int stats_length(const string &file);
     int write_all(const string &input, const string &output, set<string> expressedTr);
     int build_tsstes(const string &input);
-	int filter_transcripts_with_tsstes(const string &input, const string &predictions, const string &output);
+	int filter_transcripts_with_tsstes(const string &input, const string &predictions, const string &output, int hard_mode);
 	int filter_transcripts_by_chromosomes(const std::string &input_gtf, const std::string &chrom_file, const std::string &output_gtf);
-	
+	int filter_transcripts_with_tsstes_threshold(const std::string &input, const std::string &predictions, const std::string &output, int hard_mode, int bp_threshold);
+	int update_coverage_by_prediction(const string &input_gtf, const string &predictions, const string &output_gtf);
+
 private:
 	int build_multiexon_transcripts(const string &file);
 	int build_all_transcripts(const string &file);

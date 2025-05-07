@@ -26,7 +26,10 @@ int main(int argc, const char **argv)
         cout<<"       " << argv[0] << " filter-tr-num <min-transcript-num> <in-gtf-file> <out-gtf-file>"<<endl;
         cout<<"       " << argv[0] << " select-tr <transcript-list> <in-gtf-file> <out-gtf-file>"<<endl;
         cout<<"       " << argv[0] << " TSSTES <in-gtf-file>"<<endl;
-		cout<<"		  " << argv[0] << " remove-fp <in-gtf-file> <predictions-file> <out-gtf-file>"<<endl;
+		cout<<"		  " << argv[0] << " remove-fp <in-gtf-file> <predictions-file> <out-gtf-file> <hard-mode>"<<endl;
+		cout<<"		  " << argv[0] << " remove-fp-threshold <in-gtf-file> <predictions-file> <out-gtf-file> <hard-mode> <bp-threshold>"<<endl;
+		cout<<"		  " << argv[0] << " filter-chrom <in-gtf-file> <chrom-file> <out-gtf-file>"<<endl;
+		cout<<"		  " << argv[0] << " update-cov <in-gtf-file> <predictions-file> <out-gtf-file>"<<endl;
 		return 0;
 	}
 
@@ -111,8 +114,8 @@ int main(int argc, const char **argv)
 	if(string(argv[1]) == "remove-fp" )
 	{
 		genome1 gm;
-		assert(argc == 5);
-		gm.filter_transcripts_with_tsstes(argv[2], argv[3], argv[4]);
+		assert(argc == 6);
+		gm.filter_transcripts_with_tsstes(argv[2], argv[3], argv[4], atoi(argv[5]));
 	}
 
 	if(string(argv[1]) == "filter-chrom")
@@ -122,5 +125,20 @@ int main(int argc, const char **argv)
 		gm.filter_transcripts_by_chromosomes(argv[2], argv[3], argv[4]);
 	}
 
+	if(string(argv[1]) == "remove-fp-threshold" )
+	{
+		cout << "filtering based on threshold: " << atoi(argv[6]) << endl;
+		genome1 gm;
+		assert(argc == 7);
+		gm.filter_transcripts_with_tsstes_threshold(argv[2], argv[3], argv[4], atoi(argv[5]), atoi(argv[6]));
+	}
+
+	if (string(argv[1]) == "update-cov")
+	{
+		assert(argc == 5);
+		genome1 gm;
+		gm.update_coverage_by_prediction(argv[2], argv[3], argv[4]);
+	}
+	
     return 0;
 }

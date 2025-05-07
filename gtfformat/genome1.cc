@@ -472,7 +472,8 @@ int genome1::build_tsstes(const string &input)
 		for (int j = 0; j < gm.genes[i].transcripts.size(); j++)
 		{
 			transcript &t = gm.genes[i].transcripts[j];
-			// printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
+			// if (t.seqname == "chr15" && t.end == 23288939)
+			printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
 
 			pair<string, int32_t> p1 = make_pair(t.seqname, t.start + 1);
 			pair<string, int32_t> p2 = make_pair(t.seqname, t.end);
@@ -511,7 +512,7 @@ int genome1::build_tsstes(const string &input)
 	return 0;
 }
 
-int genome1::filter_transcripts_with_tsstes(const string &input, const string &predictions, const string &output)
+int genome1::filter_transcripts_with_tsstes(const string &input, const string &predictions, const string &output, int hard_mode)
 {
 	build_all_transcripts(input);
 	// read predictions tsv file
@@ -601,22 +602,45 @@ int genome1::filter_transcripts_with_tsstes(const string &input, const string &p
 	for( int i=0; i<(int)transcripts.size(); i++)
 	{
 		transcript &t = transcripts[i];
-		if(chrom_data_tss.find(t.seqname) == chrom_data_tss.end() || chrom_data_tes.find(t.seqname) == chrom_data_tes.end()) 
+		if (hard_mode == 1)
 		{
-			cerr << "Can not find chromosome <" << t.seqname << "> in TSS or TES data" << endl;
-			continue;
-			//exit(1);
+			if(chrom_data_tss.find(t.seqname) == chrom_data_tss.end() || chrom_data_tes.find(t.seqname) == chrom_data_tes.end()) 
+			{
+				// cerr << "Can not find chromosome <" << t.seqname << "> in TSS or TES data" << endl;
+				continue;
+				//exit(1);
+			}
+			if(t.strand == '+')
+			{
+				if(chrom_data_tss[t.seqname].find(t.start+1) != chrom_data_tss[t.seqname].end() && chrom_data_tes[t.seqname].find(t.end) != chrom_data_tes[t.seqname].end())
+				filtered_tr.push_back(t);
+			}
+			else
+			{
+				if(chrom_data_tss[t.seqname].find(t.end) != chrom_data_tss[t.seqname].end() && chrom_data_tes[t.seqname].find(t.start+1) != chrom_data_tes[t.seqname].end())
+				filtered_tr.push_back(t);
+			}
 		}
-		if(t.strand == '+')
+		else if (hard_mode == 0)
 		{
-			if(chrom_data_tss[t.seqname].find(t.start+1) != chrom_data_tss[t.seqname].end() && chrom_data_tes[t.seqname].find(t.end) != chrom_data_tes[t.seqname].end())
-			 filtered_tr.push_back(t);
+			if(chrom_data_tss.find(t.seqname) == chrom_data_tss.end() && chrom_data_tes.find(t.seqname) == chrom_data_tes.end()) 
+			{
+				cerr << "Can not find chromosome <" << t.seqname << "> in TSS or TES data" << endl;
+				continue;
+				//exit(1);
+			}
+			if(t.strand == '+')
+			{
+				if(chrom_data_tss[t.seqname].find(t.start+1) != chrom_data_tss[t.seqname].end() || chrom_data_tes[t.seqname].find(t.end) != chrom_data_tes[t.seqname].end())
+				filtered_tr.push_back(t);
+			}
+			else
+			{
+				if(chrom_data_tss[t.seqname].find(t.end) != chrom_data_tss[t.seqname].end() || chrom_data_tes[t.seqname].find(t.start+1) != chrom_data_tes[t.seqname].end())
+				filtered_tr.push_back(t);
+			}
 		}
-		else
-		{
-			if(chrom_data_tss[t.seqname].find(t.end) != chrom_data_tss[t.seqname].end() && chrom_data_tes[t.seqname].find(t.start+1) != chrom_data_tes[t.seqname].end())
-			 filtered_tr.push_back(t);
-		}
+		
 		
 	} 
 	transcripts = filtered_tr;
@@ -624,6 +648,90 @@ int genome1::filter_transcripts_with_tsstes(const string &input, const string &p
 	return 0;
 	
 }
+
+
+int genome1::filter_transcripts_with_tsstes_threshold(const std::string &input, const std::string &predictions, const std::string &output, int hard_mode, int bp_threshold)
+{
+	build_all_transcripts(input);
+	std::unordered_map<std::string, std::unordered_set<int>> chrom_data_tss;
+	std::unordered_map<std::string, std::unordered_set<int>> chrom_data_tes;
+
+	std::ifstream pred_file(predictions);
+	if (!pred_file)
+	{
+		std::cerr << "Error opening file: " << predictions << std::endl;
+		return 1;
+	}
+
+	std::string line, col_name;
+	std::vector<std::string> headers;
+	std::getline(pred_file, line);
+	std::stringstream ss_header(line);
+	while (std::getline(ss_header, col_name, '\t')) headers.push_back(col_name);
+
+	while (std::getline(pred_file, line))
+	{
+		std::stringstream ss(line);
+		std::string value, chrom, site_type;
+		int pos = -1, pred_value = 0;
+		int colIndex = 0;
+
+		while (std::getline(ss, value, '\t') && colIndex < headers.size())
+		{
+			switch (colIndex)
+			{
+				case 0: site_type = value; break;
+				case 1: chrom = value; break;
+				case 2: pos = std::atoi(value.c_str()); break;
+				case 4: pred_value = std::atoi(value.c_str()); break;
+			}
+			colIndex++;
+		}
+
+		if (pred_value > 0)
+		{
+			if (site_type == "TSS") chrom_data_tss[chrom].insert(pos);
+			else if (site_type == "TES") chrom_data_tes[chrom].insert(pos);
+		}
+	}
+
+	auto site_within_threshold = [](int site, const std::unordered_set<int> &site_set, int threshold) {
+		for (int delta = -threshold; delta <= threshold; ++delta)
+		{
+			if (site_set.find(site + delta) != site_set.end())
+			return true;
+		}
+		return false;
+	};
+
+	std::vector<transcript> filtered_tr;
+	for (const auto &t : transcripts)
+	{
+		bool tss_match = false, tes_match = false;
+
+		if (chrom_data_tss.count(t.seqname))
+		{
+			int tss = (t.strand == '+') ? t.start + 1 : t.end;
+			tss_match = site_within_threshold(tss, chrom_data_tss[t.seqname], bp_threshold);
+		}
+
+		if (chrom_data_tes.count(t.seqname))
+		{
+			int tes = (t.strand == '+') ? t.end : t.start + 1;
+			tes_match = site_within_threshold(tes, chrom_data_tes[t.seqname], bp_threshold);
+		}
+
+		if ((hard_mode == 1 && tss_match && tes_match) || (hard_mode == 0 && (tss_match || tes_match)))
+		{
+			filtered_tr.push_back(t);
+		}
+	}
+	
+	transcripts = filtered_tr;
+	write(output);
+	return 0;
+}
+
 
 
 int genome1::filter_transcripts_by_chromosomes(const std::string &input_gtf, const std::string &chrom_file, const std::string &output_gtf)
@@ -652,7 +760,7 @@ int genome1::filter_transcripts_by_chromosomes(const std::string &input_gtf, con
     std::vector<transcript> filtered_transcripts;
     for (const auto &t : transcripts)
     {
-        if (allowed_chromosomes.count(t.seqname))
+        if (allowed_chromosomes.count(t.seqname) && t.strand != '.') // Ensure strand is not '.'
             filtered_transcripts.push_back(t);
     }
 
@@ -662,3 +770,126 @@ int genome1::filter_transcripts_by_chromosomes(const std::string &input_gtf, con
 
     return 0;
 }
+
+int genome1::update_coverage_by_prediction(const string &input_gtf, const string &predictions, const string &output_gtf)
+{
+	build_all_transcripts(input_gtf);
+	// read predictions tsv file
+	std::unordered_map<std::string, std::unordered_map<int, float>> chrom_data_tss;
+	std::unordered_map<std::string, std::unordered_map<int, float>> chrom_data_tes;
+	std::vector<std::string> headers = {};
+
+	std::ifstream pred_file(predictions);
+	if (!pred_file)
+	{
+		std::cerr << "Error opening file: " << predictions << std::endl;
+		return 1;
+	}
+
+	// Read headers
+	std::string line, col_name;
+	std::getline(pred_file, line); 
+	std::stringstream ss_header(line);
+	while(getline(ss_header,col_name, '\t')) headers.push_back(col_name);
+	
+	// Read data
+	while (std::getline(pred_file, line))
+	{
+		std::stringstream ss(line);
+		std::string value, chrom, site_type; 
+		int pos;
+		float pred_value;
+		int colIndex = 0;
+
+		while (std::getline(ss, value, '\t') && colIndex < headers.size())
+		{
+			switch (colIndex)
+			{
+			case 0:
+				site_type = value;
+				break;
+			case 1: //chrom name
+				chrom = value;
+				break;
+			case 2: // position
+				pos = atoi(value.c_str());
+				break;
+			case 5: // prediction probability
+				pred_value = atof(value.c_str());
+				break;
+			default:
+				break;
+			}
+			colIndex++;
+		}
+		if(site_type == "TSS")
+		{
+			chrom_data_tss[chrom][pos] = pred_value;
+		}
+		else if(site_type == "TES")
+		{
+			chrom_data_tes[chrom][pos] = pred_value;
+		}
+	}
+
+	for( const auto &x : chrom_data_tss)
+	{
+		cout << x.first << " ";
+	}
+	cout << endl;
+	for( const auto &y : chrom_data_tes)
+	{
+		cout << y.first << " ";
+	}
+	cout << endl;
+	cout << "Total number of TSS: " << chrom_data_tss.size() << endl;
+	cout << "Total number of TES: " << chrom_data_tes.size() << endl;
+
+	int missing_count = 0;
+	for (auto &tr : transcripts) {
+		// cout << tr.seqname << endl;
+        // Ensure both TSS and TES predictions exist
+        auto it_tss_chr = chrom_data_tss.find(tr.seqname);
+        auto it_tes_chr = chrom_data_tes.find(tr.seqname);
+        if (it_tss_chr == chrom_data_tss.end() || it_tes_chr == chrom_data_tes.end())
+		{
+			// cerr << "Can not find chromosome <" << tr.seqname << "> in TSS or TES data" << endl;
+			// exit(1);
+			assert(tr.strand == '.');
+			missing_count++;
+			continue;
+		}
+
+		int tss_pos = (tr.strand == '+') ? tr.start + 1 : tr.end;
+		int tes_pos = (tr.strand == '+') ? tr.end : tr.start + 1;
+
+        auto it_tss = it_tss_chr->second.find(tss_pos);
+        auto it_tes = it_tes_chr->second.find(tes_pos);
+    	if (it_tss == it_tss_chr->second.end() || it_tes == it_tes_chr->second.end())
+        {
+            // cerr << "Can not find TSS for chromosome <" << tr.seqname << "> at position " << tss_pos << endl;
+			assert(tr.strand == '.');
+            missing_count++;
+            continue;
+			// exit(1);
+        }
+        
+        float tss_prob = it_tss->second;
+        float tes_prob = it_tes->second;
+
+        // Combine old coverage with probabilities
+        float old_cov_before = tr.coverage;
+        float combined_cov = old_cov_before * tss_prob * tes_prob;
+
+        // Update the transcript's coverage
+		tr.coverage = combined_cov;
+    }
+	cout << "Total number of transcripts with missing TSS or TES: " << missing_count << endl;
+	cout << "Total number of transcripts processed: " << transcripts.size() << endl;
+	// Write the updated transcripts to the output GTF
+	write(output_gtf);
+	pred_file.close();
+
+	return 0;
+}
+
