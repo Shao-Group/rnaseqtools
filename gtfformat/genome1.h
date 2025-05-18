@@ -39,7 +39,11 @@ public:
 	int filter_transcripts_by_chromosomes(const std::string &input_gtf, const std::string &chrom_file, const std::string &output_gtf);
 	int filter_transcripts_with_tsstes_threshold(const std::string &input, const std::string &predictions, const std::string &output, int hard_mode, int bp_threshold);
 	int update_coverage_by_prediction(const string &input_gtf, const string &predictions, const string &output_gtf);
-
+	int update_tpm(const string &input_gtf, const string &tpm_file, const string &output_gtf);
+	int write_tss_tes_coverage(const std::string &input_gtf, const std::string &output_tsv);
+	int update_transcript_coverage(const string &input_gtf, const string &pred_file, const string &output_gtf);
+	int map_refseq_to_ucsc(const string &input_gtf, const string &pred_file, const string &output_gtf);
+	
 private:
 	int build_multiexon_transcripts(const string &file);
 	int build_all_transcripts(const string &file);

@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <fstream>
 
 genome1::genome1()
 {
@@ -472,8 +473,7 @@ int genome1::build_tsstes(const string &input)
 		for (int j = 0; j < gm.genes[i].transcripts.size(); j++)
 		{
 			transcript &t = gm.genes[i].transcripts[j];
-			// if (t.seqname == "chr15" && t.end == 23288939)
-			printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
+			// printf("TSS = %d, TES = %d, t-strand = %c\n", t.start, t.end, t.strand);
 
 			pair<string, int32_t> p1 = make_pair(t.seqname, t.start + 1);
 			pair<string, int32_t> p2 = make_pair(t.seqname, t.end);
@@ -853,7 +853,7 @@ int genome1::update_coverage_by_prediction(const string &input_gtf, const string
         auto it_tes_chr = chrom_data_tes.find(tr.seqname);
         if (it_tss_chr == chrom_data_tss.end() || it_tes_chr == chrom_data_tes.end())
 		{
-			// cerr << "Can not find chromosome <" << tr.seqname << "> in TSS or TES data" << endl;
+			cerr << "Can not find chromosome <" << tr.seqname << "> in TSS or TES data" << endl;
 			// exit(1);
 			assert(tr.strand == '.');
 			missing_count++;
@@ -867,7 +867,8 @@ int genome1::update_coverage_by_prediction(const string &input_gtf, const string
         auto it_tes = it_tes_chr->second.find(tes_pos);
     	if (it_tss == it_tss_chr->second.end() || it_tes == it_tes_chr->second.end())
         {
-            // cerr << "Can not find TSS for chromosome <" << tr.seqname << "> at position " << tss_pos << endl;
+            cerr << "Can not find TSS for chromosome <" << tr.seqname << "> at position " << tss_pos << endl;
+			cerr << "Can not find TES for chromosome <" << tr.seqname << "> at position " << tes_pos << endl;
 			assert(tr.strand == '.');
             missing_count++;
             continue;
@@ -893,3 +894,248 @@ int genome1::update_coverage_by_prediction(const string &input_gtf, const string
 	return 0;
 }
 
+// updated tpm from a tsv file
+int genome1::update_tpm(const string &input_gtf, const string &tpm_file, const string &output_gtf)
+{
+	build_all_transcripts(input_gtf);
+	// read predictions tsv file
+	unordered_map<string, float> tpm_data;
+	std::vector<std::string> headers = {};
+
+	std::ifstream tpmf(tpm_file);
+	if (!tpmf)
+	{
+		std::cerr << "Error opening file: " << tpm_file << std::endl;
+		return 1;
+	}
+
+	// Read headers
+	std::string line, col_name;
+	std::getline(tpmf, line);
+	std::stringstream ss_header(line);
+	while (getline(ss_header, col_name, '\t')) headers.push_back(col_name);
+	// Read data
+	while (std::getline(tpmf, line))
+	{
+		std::stringstream ss(line);
+		std::string value, transcript_id;
+		float tpm_value;
+		int colIndex = 0;
+
+		while (std::getline(ss, value, '\t') && colIndex < headers.size())
+		{
+			switch (colIndex)
+			{
+			case 0:
+				transcript_id = value;
+				break;
+			case 1: // tpm value
+				tpm_value = atof(value.c_str());
+				break;
+			default:
+				break;
+			}
+			colIndex++;
+		}
+		tpm_data[transcript_id] = tpm_value;
+	}
+
+
+	for (auto &tr : transcripts)
+	{
+		auto it = tpm_data.find(tr.transcript_id);
+		if (it != tpm_data.end())
+		{
+			tr.coverage = it->second;
+		}
+		else
+		{
+			cerr << "Can not find transcript <" << tr.transcript_id << "> in TPM data" << endl;
+			exit(1);
+		}
+	}
+	// Write the updated transcripts to the output GTF
+	write(output_gtf);
+	tpmf.close();
+	return 0;
+
+}
+
+
+
+int genome1::write_tss_tes_coverage(const std::string &input_gtf, const std::string &output_tsv)
+{
+    // Populate `transcripts`
+    build_all_transcripts(input_gtf);
+
+    std::ofstream out(output_tsv);
+    if (!out) {
+        std::cerr << "Error opening " << output_tsv << std::endl;
+        return 1;
+    }
+
+    // Header
+    out << "transcript_id\ttss_chrom\ttss_pos\ttes_chrom\ttes_pos\tcoverage\n";
+
+	cout << transcripts.size() << " transcripts" << endl;
+    // One line per transcript
+    for (auto &tr : transcripts) {
+		if (tr.strand == '.') continue;
+        const std::string &chrom = tr.seqname;
+        int tss_pos = (tr.strand == '+') ? tr.start + 1 : tr.end;
+        int tes_pos = (tr.strand == '+') ? tr.end : tr.start + 1;
+
+        out << tr.transcript_id << '\t'
+          	<< chrom            << '\t'
+			<< tss_pos          << '\t'
+			<< chrom            << '\t'
+			<< tes_pos          << '\t'
+			<< tr.coverage      << '\n';
+		}
+
+    return 0;
+}
+
+
+// updated tpm from a tsv file
+int genome1::update_transcript_coverage(const string &input_gtf, const string &pred_file, const string &output_gtf)
+{
+	build_all_transcripts(input_gtf);
+	// read predictions tsv file
+	unordered_map<string, float> pred_data;
+	std::vector<std::string> headers = {};
+
+	std::ifstream predf(pred_file);
+	if (!predf)
+	{
+		std::cerr << "Error opening file: " << pred_file << std::endl;
+		return 1;
+	}
+
+	// Read headers
+	std::string line, col_name;
+	std::getline(predf, line);
+	std::stringstream ss_header(line);
+	while (getline(ss_header, col_name, '\t')) headers.push_back(col_name);
+	// Read data
+	while (std::getline(predf, line))
+	{
+		std::stringstream ss(line);
+		std::string value, transcript_id;
+		float pred_value;
+		int colIndex = 0;
+
+		while (std::getline(ss, value, '\t') && colIndex < headers.size())
+		{
+			switch (colIndex)
+			{
+			case 0:
+				transcript_id = value;
+				break;
+			case 1: // predicted value
+				pred_value = atof(value.c_str());
+				break;
+			default:
+				break;
+			}
+			colIndex++;
+		}
+		pred_data[transcript_id] = pred_value;
+	}
+
+
+	for (auto &tr : transcripts)
+	{
+		auto it = pred_data.find(tr.transcript_id);
+		if (it != pred_data.end())
+		{
+			tr.coverage *=  it->second;
+		}
+		else
+		{
+			if(tr.strand != '.')
+			{
+				cerr << "Can not find transcript <" << tr.transcript_id << "> < " << tr.strand << " > in predicted data" << endl;
+			}
+			// exit(1);
+			continue;
+		}
+	}
+	// Write the updated transcripts to the output GTF
+	write(output_gtf);
+	predf.close();
+	return 0;
+
+}
+
+
+int genome1::map_refseq_to_ucsc(const string &input_gtf, const string &map, const string &output_gtf)
+{
+	build_all_transcripts(input_gtf);
+	// read predictions tsv file
+	unordered_map<string, string> map_data;
+	std::vector<std::string> headers = {};
+
+	std::ifstream mapf(map);
+	if (!mapf)
+	{
+		std::cerr << "Error opening file: " << map << std::endl;
+		return 1;
+	}
+
+	// Read headers
+	std::string line, col_name;
+	// std::getline(mapf, line);
+	// std::stringstream ss_header(line);
+	headers.push_back(string("refseq"));
+	headers.push_back(string("ucsc"));
+	// while (getline(ss_header, col_name, '\t')) headers.push_back(col_name);
+	// Read data
+	while (std::getline(mapf, line))
+	{
+		std::stringstream ss(line);
+		std::string value, refseq_chrom, ucsc_chrom;
+		int colIndex = 0;
+
+		while (std::getline(ss, value, '\t') && colIndex < headers.size())
+		{
+			switch (colIndex)
+			{
+				case 0: // refseq chromosome
+					refseq_chrom = value;
+					break;
+				case 1: // ucsc chromosome
+					ucsc_chrom = value;
+					break;
+			default:
+				break;
+			}
+
+			colIndex++;
+			map_data[refseq_chrom] = ucsc_chrom;
+			// cout << "Refseq: " << refseq_chrom << " UCSC: " << ucsc_chrom << endl;
+		}
+	}
+
+	for (auto &tr : transcripts)
+	{
+		auto it = map_data.find(tr.seqname);
+		if (it != map_data.end())
+		{
+			tr.seqname = it->second;
+		}
+		else
+		{
+			cerr << "Can not find chromosome <" << tr.seqname << "> in mapping data" << endl;
+			
+			exit(1);
+		}
+	}
+
+	// Write the updated transcripts to the output GTF
+	write(output_gtf);
+	mapf.close();
+
+	return 0;
+
+}

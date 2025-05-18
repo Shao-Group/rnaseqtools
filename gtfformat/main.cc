@@ -30,9 +30,14 @@ int main(int argc, const char **argv)
 		cout<<"		  " << argv[0] << " remove-fp-threshold <in-gtf-file> <predictions-file> <out-gtf-file> <hard-mode> <bp-threshold>"<<endl;
 		cout<<"		  " << argv[0] << " filter-chrom <in-gtf-file> <chrom-file> <out-gtf-file>"<<endl;
 		cout<<"		  " << argv[0] << " update-cov <in-gtf-file> <predictions-file> <out-gtf-file>"<<endl;
+		cout<<"		  " << argv[0] << " update-tpm <in-gtf-file> <tpm-file> <out-gtf-file>"<<endl;
+		cout<<"		  " << argv[0] << " get-coverage <in-gtf-file> <out-tsv-file>"<<endl;
+		cout<<"		  " << argv[0] << " update-transcript-cov <in-gtf-file> <predictions-file> <out-gtf-file>"<<endl;
 		return 0;
 	}
 
+	// cout << argv[1] << endl;
+	
 	if(string(argv[1]) == "FPKM2TPM")
 	{
 		genome gm(argv[2]);
@@ -139,6 +144,37 @@ int main(int argc, const char **argv)
 		genome1 gm;
 		gm.update_coverage_by_prediction(argv[2], argv[3], argv[4]);
 	}
-	
+
+	if (string(argv[1]) == "update-tpm")
+	{
+		assert(argc == 5);
+		genome1 gm;
+		gm.update_tpm(argv[2], argv[3], argv[4]);
+
+	}
+
+	if (string(argv[1]) == "get-cov")
+	{
+		assert(argc == 4);
+		genome1 gm;
+		gm.write_tss_tes_coverage(argv[2], argv[3]);
+	}
+
+	if (string(argv[1]) == "update-transcript-cov")
+	{
+		assert(argc == 5);
+		// cout << "Updating transcript coverage based on TSS and TES predictions" << endl;
+		genome1 gm;
+		gm.update_transcript_coverage(argv[2], argv[3], argv[4]);
+	}
+
+	if (string(argv[1]) == "map-refseq-to-ucsc")
+	{
+		assert(argc == 5);
+		// cout << "Mapping RefSeq to UCSC" << endl;
+		genome1 gm;
+		gm.map_refseq_to_ucsc(argv[2], argv[3], argv[4]);
+	}
+
     return 0;
 }
